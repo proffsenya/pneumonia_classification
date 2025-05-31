@@ -10,8 +10,8 @@ def get_model(model_name, num_classes=2):
         model = models.resnet18(pretrained=True)
         model.fc = nn.Linear(model.fc.in_features, num_classes)
 
-    elif model_name == 'densenet69':
-        model = models.densenet69(pretrained=True)
+    elif model_name == 'densenet121':
+        model = models.densenet121(pretrained=True)
         model.classifier = nn.Linear(model.classifier.in_features, num_classes)
 
     else:
