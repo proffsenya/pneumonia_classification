@@ -99,8 +99,8 @@ def main():
     train_dataset = datasets.ImageFolder(train_dir, transform=train_transforms)
     test_dataset = datasets.ImageFolder(test_dir, transform=test_transforms)
 
-    train_loader = DataLoader(train_dataset, batch_size=8, shuffle=True, num_workers=4)
-    test_loader = DataLoader(test_dataset, batch_size=8, shuffle=False, num_workers=4)
+    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True, num_workers=0)
+    test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False, num_workers=0)
 
     dataloaders = {
         'train': train_loader,
@@ -112,7 +112,7 @@ def main():
 
     class_names = train_dataset.classes
 
-    model_names = ['vgg11', 'resnet18', 'densenet69']
+    model_names = ['vgg11', 'resnet18', 'densenet121']
     best_acc = 0.0
     best_model_name = None
 
