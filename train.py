@@ -1,5 +1,6 @@
 import os
 import torch
+import kagglehub
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 import torch.nn as nn
@@ -70,7 +71,16 @@ def visualize_predictions(model, dataloader, device, class_names, num_images=6):
     plt.show()
 
 def main():
-    base_path = '/Users/proffsenya/Desktop/VKR/pneumonia_classification/PediatricChestX-rayPneumonia'
+    print("Downloading dataset from Kaggle (this may take a while)...")
+    base_path = kagglehub.dataset_download("andrewmvd/pediatric-pneumonia-chest-xray")
+    print(f"Dataset downloaded to: {base_path}")
+
+    # Иногда датасет распаковывается в подпапку (например, 'PediatricChestX-rayPneumonia' или 'Pediatric Chest X-ray Pneumonia')
+    if not os.path.isdir(os.path.join(base_path, 'train')):
+        for item in os.listdir(base_path):
+            if os.path.isdir(os.path.join(base_path, item, 'train')):
+                base_path = os.path.join(base_path, item)
+                break
 
     train_dir = os.path.join(base_path, 'train')
     test_dir = os.path.join(base_path, 'test')
