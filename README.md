@@ -1,3 +1,40 @@
 # pneumonia_classification
 
-# Датасет - https://www.kaggle.com/datasets/andrewmvd/pediatric-pneumonia-chest-xray?resource=download
+В этом проекте используется только модель `vgg11`.
+
+- `train.py` обучает модель и сохраняет веса в `best_vgg11.pth`
+- `app.py` запускает веб-сайт для загрузки снимка, отображения heatmap и получения предварительного диагноза от Ollama
+- `find_pneumonia.py` остаётся утилитой для локальных проверок и генерации тепловых карт
+
+> Для работы сайта требуется установленный локальный Ollama CLI и модель Ollama. По умолчанию используется модель `llama2`; её можно заменить через переменную окружения `OLLAMA_MODEL`.
+
+## Установка
+
+```bash
+pip install -r requirements.txt
+```
+
+## Запуск веб-приложения
+
+```bash
+python app.py
+```
+
+После запуска откройте в браузере:
+
+```
+http://127.0.0.1:5000
+```
+
+## Как это работает
+
+1. Загрузите рентген-снимок через форму.
+2. Модель `vgg11` предскажет `NORMAL` или `PNEUMONIA`.
+3. Строится Grad-CAM heatmap поверх изображения.
+4. Ollama CLI получает текстовый prompt и возвращает предварительный диагноз.
+
+Если Ollama не установлена, приложение покажет локальный fallback-диагноз.
+
+## Датасет
+
+https://www.kaggle.com/datasets/andrewmvd/pediatric-pneumonia-chest-xray?resource=download

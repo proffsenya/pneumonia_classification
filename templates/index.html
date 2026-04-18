@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pneumonia X-ray Diagnosis</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Pneumonia X-ray Diagnosis</h1>
+            <p>Загрузите рентген-снимок, чтобы увидеть прогноз модели, тепловую карту и предварительный диагноз Ollama.</p>
+        </header>
+
+        <form method="post" enctype="multipart/form-data" class="upload-form">
+            <label for="file">Выберите файл рентгена (JPG/PNG):</label>
+            <input type="file" id="file" name="file" accept="image/*" required>
+            <button type="submit">Загрузить и проанализировать</button>
+        </form>
+
+        {% if result %}
+            {% if result.error %}
+                <div class="alert error">{{ result.error }}</div>
+            {% else %}
+                <div class="summary">
+                    <div><strong>Модель:</strong> {{ model_name }}</div>
+                    <div><strong>Прогноз:</strong> {{ result.prediction }}</div>
+                    <div><strong>Ollama model:</strong> {{ ollama_model }}</div>
+                    {% if not ollama_status %}
+                        <div class="alert warning">Ollama CLI не найдена. Используется локальный fallback-диагноз.</div>
+                    {% endif %}
+                </div>
+                <div class="images-row">
+                    <div class="image-card">
+                        <h3>Оригинал</h3>
+                        <img src="data:image/png;base64,{{ original_image }}" alt="Original X-ray">
+                    </div>
+                    <div class="image-card">
+                        <h3>Тепловая карта</h3>
+                        <img src="data:image/png;base64,{{ heatmap_image }}" alt="Heatmap">
+                    </div>
+                </div>
+                <div class="diagnosis">
+                    <h3>Предварительный диагноз</h3>
+                    <p>{{ diagnosis }}</p>
+                </div>
+            {% endif %}
+        {% endif %}
+
+        <footer>
+            <p>Если Ollama не установлен, установите его и задайте модель через переменную окружения <code>OLLAMA_MODEL</code>.</p>
+        </footer>
+    </div>
+</body>
+</html>

@@ -1,3 +1,7 @@
 torch
 torchvision
 kagglehub
+flask
+pillow
+grad-cam
+requests
