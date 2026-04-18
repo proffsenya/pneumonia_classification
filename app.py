@@ -189,7 +189,7 @@ def index():
                 pred_class = CLASS_NAMES[predicted.item()]
 
             grayscale_cam = cam(input_tensor=input_tensor,
-                                targets=[ClassifierOutputTarget(CLASS_NAMES.index('PNEUMONIA'))],
+                                targets=[ClassifierOutputTarget(CLASS_NAMES.index(pred_class))],
                                 aug_smooth=True, eigen_smooth=True)
             grayscale_cam = grayscale_cam[0, :]
 
