@@ -3,50 +3,445 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pneumonia X-ray Diagnosis</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <title>Диагностика пневмонии — диалог двух ИИ</title>
+    <style>
+        :root {
+            --bg: #121212;
+            --surface: #1f1f1f;
+            --text: #ededed;
+            --muted: #cfcfcf;
+            --accent: #4dabf7;
+            --danger: #ff6b6b;
+            --success: #4ecdc4;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Inter, Arial, sans-serif;
+            background: radial-gradient(circle at top, #1b1b2e, #09090f);
+            color: var(--text);
+        }
+
+        .container {
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 32px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        h1 {
+            margin: 0 0 12px;
+            font-size: 2.6rem;
+        }
+
+        p {
+            margin: 0;
+            color: var(--muted);
+        }
+
+        .upload-form {
+            display: grid;
+            gap: 16px;
+            padding: 24px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 18px;
+        }
+
+        .upload-form label {
+            font-size: 1rem;
+            color: var(--text);
+        }
+
+        .upload-form input[type="file"] {
+            color: var(--text);
+        }
+
+        .upload-form button {
+            width: fit-content;
+            padding: 12px 22px;
+            border: none;
+            border-radius: 999px;
+            background: var(--accent);
+            color: #081f3f;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .images-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-top: 32px;
+        }
+
+        .image-card {
+            padding: 18px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 18px;
+        }
+
+        .image-card h3 {
+            margin-top: 0;
+            font-size: 1.1rem;
+            color: var(--accent);
+        }
+
+        .image-card img {
+            width: 100%;
+            display: block;
+            border-radius: 14px;
+            margin-top: 16px;
+        }
+
+        .summary,
+        .dialogue-section,
+        .final-diagnosis-box,
+        footer {
+            margin-top: 24px;
+            padding: 18px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 18px;
+        }
+
+        .summary {
+            display: grid;
+            gap: 10px;
+        }
+
+        .prediction-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            background: linear-gradient(135deg, var(--accent), #5ac8fa);
+            color: #081f3f;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .dialogue-section {
+            margin-top: 32px;
+            padding: 24px;
+        }
+
+        .dialogue-section h2 {
+            margin-top: 0;
+            color: var(--accent);
+            text-align: center;
+            font-size: 1.4rem;
+        }
+
+        .dialogue-box {
+            margin-top: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Отдельные блоки для каждого сообщения */
+        .msg-block {
+            background: rgba(0, 0, 0, 0.35);
+            border-left: 5px solid var(--accent);
+            border-radius: 12px;
+            padding: 16px 20px;
+            transition: 0.2s;
+        }
+
+        .msg-block strong {
+            font-size: 1rem;
+            color: var(--accent);
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .msg-block p {
+            margin: 0;
+            line-height: 1.55;
+            color: var(--text);
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        /* Блок Llama2 — другой цвет рамки */
+        .msg-block.llama {
+            border-left-color: var(--success);
+        }
+
+        .msg-block.llama strong {
+            color: var(--success);
+        }
+
+        /* Финальное мнение */
+        .msg-block.final {
+            border-left-color: #ffd93d;
+            background: rgba(255, 217, 61, 0.08);
+        }
+
+        .msg-block.final strong {
+            color: #ffd93d;
+        }
+
+        .final-diagnosis-box {
+            margin-top: 32px;
+            background: linear-gradient(135deg, rgba(78, 205, 196, 0.15), rgba(77, 171, 247, 0.15));
+            border: 2px solid var(--success);
+            padding: 24px;
+            text-align: center;
+        }
+
+        .final-diagnosis-box h3 {
+            margin-top: 0;
+            color: var(--success);
+            font-size: 1.2rem;
+        }
+
+        .final-text {
+            font-size: 1.1rem;
+            color: #a8ebe8;
+            font-weight: 600;
+            margin: 12px 0;
+            line-height: 1.6;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            display: none;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid rgba(77, 171, 247, 0.3);
+            border-top: 4px solid #4dabf7;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        #loadingText {
+            color: var(--muted);
+            font-size: 1rem;
+            margin: 0;
+        }
+
+        footer {
+            font-size: 0.95rem;
+            color: var(--muted);
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Pneumonia X-ray Diagnosis</h1>
-            <p>Загрузите рентген-снимок, чтобы увидеть прогноз модели, тепловую карту и предварительный диагноз Ollama.</p>
-        </header>
+<div class="container">
+    <header>
+        <h1>🫁 Диагностика пневмонии — диалог двух ИИ</h1>
+        <p>Нейросеть VGG11 + GradCAM | Обсуждение: Mistral и Llama2</p>
+    </header>
 
-        <form method="post" enctype="multipart/form-data" class="upload-form">
-            <label for="file">Выберите файл рентгена (JPG/PNG):</label>
-            <input type="file" id="file" name="file" accept="image/*" required>
-            <button type="submit">Загрузить и проанализировать</button>
-        </form>
-
-        {% if result %}
-            {% if result.error %}
-                <div class="alert error">{{ result.error }}</div>
-            {% else %}
-                <div class="summary">
-                    <div><strong>Модель:</strong> {{ model_name }}</div>
-                    <div><strong>Прогноз:</strong> {{ result.prediction }}</div>
-                    <div><strong>Ollama model:</strong> {{ ollama_model }}</div>
-                    {% if not ollama_status %}
-                        <div class="alert warning">Ollama CLI не найдена. Используется локальный fallback-диагноз.</div>
-                    {% endif %}
-                </div>
-                <div class="images-row">
-                    <div class="image-card">
-                        <h3>Оригинал</h3>
-                        <img src="data:image/png;base64,{{ original_image }}" alt="Original X-ray">
-                    </div>
-                    <div class="image-card">
-                        <h3>Тепловая карта</h3>
-                        <img src="data:image/png;base64,{{ heatmap_image }}" alt="Heatmap">
-                    </div>
-                </div>
-                <div class="diagnosis">
-                    <h3>Предварительный диагноз</h3>
-                    <p>{{ diagnosis }}</p>
-                </div>
-            {% endif %}
-        {% endif %}
+    <div class="upload-form">
+        <label for="fileInput">Выберите файл рентгена (JPG/PNG):</label>
+        <input type="file" id="fileInput" accept="image/jpeg,image/png">
+        <button id="analyzeBtn">📤 Загрузить и проанализировать</button>
     </div>
+
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <p id="loadingText">Загрузка и анализ...</p>
+    </div>
+
+    <div id="resultsContainer" style="display: none;">
+        <div class="summary">
+            <div><strong>🧠 Нейросеть:</strong> VGG11</div>
+            <div><strong>🔍 Предсказание:</strong> <span id="predictionBadge" class="prediction-badge">—</span></div>
+            <div><strong>💬 LLM модели:</strong> Mistral + Llama2</div>
+        </div>
+
+        <div id="imagesContainer" style="display: none;">
+            <div class="images-row">
+                <div class="image-card">
+                    <h3>📋 Оригинальный снимок</h3>
+                    <img id="originalImg" alt="Original X-ray">
+                </div>
+                <div class="image-card">
+                    <h3>🔥 Тепловая карта (лёгкие)</h3>
+                    <img id="heatmapImg" alt="GradCAM heatmap">
+                </div>
+            </div>
+        </div>
+
+        <div id="dialogueContainer" style="display: none;">
+            <div class="dialogue-section">
+                <h2>💬 Обсуждение между AI</h2>
+                <div class="dialogue-box">
+                    <!-- Блок Mistral -->
+                    <div id="model1Block" class="msg-block" style="display: none;">
+                        <strong>💙 MISTRAL</strong>
+                        <p id="model1Text"></p>
+                    </div>
+                    <!-- Блок Llama2 -->
+                    <div id="model2Block" class="msg-block llama" style="display: none;">
+                        <strong>💚 LLAMA2</strong>
+                        <p id="model2Text"></p>
+                    </div>
+                    <!-- Блок финального мнения -->
+                    <div id="finalBlock" class="msg-block final" style="display: none;">
+                        <strong>✅ ФИНАЛЬНОЕ МНЕНИЕ</strong>
+                        <p id="finalText"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="finalDiagnosisBox" class="final-diagnosis-box" style="display: none;">
+            <h3>✅ ИТОГОВЫЙ ПРЕДВАРИТЕЛЬНЫЙ ДИАГНОЗ</h3>
+            <p class="final-text" id="finalDiagnosis"></p>
+        </div>
+    </div>
+
+    <footer>
+        <p>⚕️ Диагноз носит рекомендательный характер. Обязательна консультация врача.</p>
+    </footer>
+</div>
+
+<script>
+    const fileInput = document.getElementById('fileInput');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const loadingDiv = document.getElementById('loading');
+    const resultsContainer = document.getElementById('resultsContainer');
+    const imagesContainer = document.getElementById('imagesContainer');
+    const dialogueContainer = document.getElementById('dialogueContainer');
+    const finalDiagnosisBox = document.getElementById('finalDiagnosisBox');
+
+    const originalImg = document.getElementById('originalImg');
+    const heatmapImg = document.getElementById('heatmapImg');
+    const predictionBadge = document.getElementById('predictionBadge');
+    const model1Block = document.getElementById('model1Block');
+    const model2Block = document.getElementById('model2Block');
+    const finalBlock = document.getElementById('finalBlock');
+    const model1Text = document.getElementById('model1Text');
+    const model2Text = document.getElementById('model2Text');
+    const finalText = document.getElementById('finalText');
+    const finalDiagnosisSpan = document.getElementById('finalDiagnosis');
+
+    analyzeBtn.addEventListener('click', async () => {
+        const file = fileInput.files[0];
+        if (!file) {
+            alert('Выберите файл');
+            return;
+        }
+
+        // Сброс UI
+        resultsContainer.style.display = 'block';
+        imagesContainer.style.display = 'none';
+        dialogueContainer.style.display = 'none';
+        finalDiagnosisBox.style.display = 'none';
+        model1Block.style.display = 'none';
+        model2Block.style.display = 'none';
+        finalBlock.style.display = 'none';
+        originalImg.src = '';
+        heatmapImg.src = '';
+        predictionBadge.innerText = '—';
+        model1Text.innerText = '';
+        model2Text.innerText = '';
+        finalText.innerText = '';
+        finalDiagnosisSpan.innerText = '';
+        loadingDiv.classList.add('active');
+        analyzeBtn.disabled = true;
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const response = await fetch('/analyze_stream', {
+                method: 'POST',
+                body: formData
+            });
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                const chunk = decoder.decode(value, { stream: true });
+                buffer += chunk;
+
+                let lines = buffer.split('\n');
+                buffer = lines.pop() || '';
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const jsonStr = line.slice(6).trim();
+                        if (jsonStr === '') continue;
+                        try {
+                            const data = JSON.parse(jsonStr);
+                            handleEvent(data);
+                        } catch (e) {
+                            console.error('JSON parse error:', e);
+                        }
+                    }
+                }
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Ошибка: ' + err.message);
+        } finally {
+            loadingDiv.classList.remove('active');
+            analyzeBtn.disabled = false;
+        }
+    });
+
+    function handleEvent(data) {
+        switch (data.type) {
+            case 'prediction':
+                predictionBadge.innerText = data.prediction;
+                break;
+            case 'heatmap':
+                imagesContainer.style.display = 'block';
+                if (data.original) originalImg.src = 'data:image/png;base64,' + data.original;
+                if (data.heatmap) heatmapImg.src = 'data:image/png;base64,' + data.heatmap;
+                break;
+            case 'model1':
+                dialogueContainer.style.display = 'block';
+                model1Block.style.display = 'block';
+                model1Text.innerText = data.response;
+                break;
+            case 'model2':
+                model2Block.style.display = 'block';
+                model2Text.innerText = data.response;
+                break;
+            case 'final':
+                finalBlock.style.display = 'block';
+                finalText.innerText = data.response;
+                finalDiagnosisBox.style.display = 'block';
+                finalDiagnosisSpan.innerText = data.response;
+                break;
+            case 'complete':
+                break;
+            case 'error':
+                alert('Ошибка: ' + data.message);
+                break;
+        }
+    }
+</script>
 </body>
 </html>
